@@ -42,7 +42,7 @@ bool hall_u, hall_v, hall_w;
 
 // Pot value and duty cycle
 int pot_val, duty_cycle;
-const int max_duty_cycle = 255;
+const int max_duty_cycle = 250;
 
 // Function declarations
 void update_hall_sensors();
@@ -96,58 +96,28 @@ void loop() {
     digitalWrite(W_HI, LOW);
     digitalWrite(W_LO, LOW);
   } else if (hall_u == HIGH && hall_v == LOW && hall_w == HIGH) {
-    digitalWrite(U_HI, LOW);
-    // digitalWrite(U_LO, LOW);
-    // digitalWrite(V_HI, LOW);
-    digitalWrite(V_LO, LOW);
+    // digitalWrite(U_HI, LOW);
+    digitalWrite(U_LO, LOW);
+    digitalWrite(V_HI, LOW);
+    // digitalWrite(V_LO, LOW);
     digitalWrite(W_HI, LOW);
     digitalWrite(W_LO, LOW);
 
-    digitalWrite(U_LO, HIGH);
-    analogWrite(V_HI, duty_cycle);
+    digitalWrite(V_LO, HIGH);
+    analogWrite(U_HI, duty_cycle);
   } else if (hall_u == HIGH && hall_v == LOW && hall_w == LOW) {
-    digitalWrite(U_HI, LOW);
-    // digitalWrite(U_LO, LOW);
+    // digitalWrite(U_HI, LOW);
+    digitalWrite(U_LO, LOW);
     digitalWrite(V_HI, LOW);
     digitalWrite(V_LO, LOW);
-    // digitalWrite(W_HI, LOW);
-    digitalWrite(W_LO, LOW);
+    digitalWrite(W_HI, LOW);
+    // digitalWrite(W_LO, LOW);
 
-    digitalWrite(U_LO, HIGH);
-    analogWrite(W_HI, duty_cycle);
+    digitalWrite(W_LO, HIGH);
+    analogWrite(U_HI, duty_cycle);
   } else if (hall_u == HIGH && hall_v == HIGH && hall_w == LOW) {
     digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
-    digitalWrite(V_HI, LOW);
-    // digitalWrite(V_LO, LOW);
-    // digitalWrite(W_HI, LOW);
-    digitalWrite(W_LO, LOW);
-
-    digitalWrite(V_LO, HIGH);
-    analogWrite(W_HI, duty_cycle);
-  } else if (hall_u == LOW && hall_v == HIGH && hall_w == LOW) {
-    // digitalWrite(U_HI, LOW);
-    digitalWrite(U_LO, LOW);
-    digitalWrite(V_HI, LOW);
-    // digitalWrite(V_LO, LOW);
-    digitalWrite(W_HI, LOW);
-    digitalWrite(W_LO, LOW);
-
-    digitalWrite(V_LO, HIGH);
-    analogWrite(U_HI, duty_cycle);
-  } else if (hall_u == LOW && hall_v == HIGH && hall_w == HIGH) {
-    // digitalWrite(U_HI, LOW);
-    digitalWrite(U_LO, LOW);
-    digitalWrite(V_HI, LOW);
-    digitalWrite(V_LO, LOW);
-    digitalWrite(W_HI, LOW);
-    // digitalWrite(W_LO, LOW);
-
-    digitalWrite(W_LO, HIGH);
-    analogWrite(U_HI, duty_cycle);
-  } else if (hall_u == LOW && hall_v == LOW && hall_w == HIGH) {
-    digitalWrite(U_HI, LOW);
-    digitalWrite(U_LO, LOW);
     // digitalWrite(V_HI, LOW);
     digitalWrite(V_LO, LOW);
     digitalWrite(W_HI, LOW);
@@ -155,6 +125,36 @@ void loop() {
 
     digitalWrite(W_LO, HIGH);
     analogWrite(V_HI, duty_cycle);
+  } else if (hall_u == LOW && hall_v == HIGH && hall_w == LOW) {
+    digitalWrite(U_HI, LOW);
+    // digitalWrite(U_LO, LOW);
+    // digitalWrite(V_HI, LOW);
+    digitalWrite(V_LO, LOW);
+    digitalWrite(W_HI, LOW);
+    digitalWrite(W_LO, LOW);
+
+    digitalWrite(U_LO, HIGH);
+    analogWrite(V_HI, duty_cycle);
+  } else if (hall_u == LOW && hall_v == HIGH && hall_w == HIGH) {
+    digitalWrite(U_HI, LOW);
+    // digitalWrite(U_LO, LOW);
+    digitalWrite(V_HI, LOW);
+    digitalWrite(V_LO, LOW);
+    // digitalWrite(W_HI, LOW);
+    digitalWrite(W_LO, LOW);
+
+    digitalWrite(U_LO, HIGH);
+    analogWrite(W_HI, duty_cycle);
+  } else if (hall_u == LOW && hall_v == LOW && hall_w == HIGH) {
+    digitalWrite(U_HI, LOW);
+    digitalWrite(U_LO, LOW);
+    digitalWrite(V_HI, LOW);
+    // digitalWrite(V_LO, LOW);
+    // digitalWrite(W_HI, LOW);
+    digitalWrite(W_LO, LOW);
+
+    digitalWrite(V_LO, HIGH);
+    analogWrite(W_HI, duty_cycle);
   }
 
   // // Print some info
