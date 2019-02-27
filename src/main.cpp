@@ -42,6 +42,7 @@ bool hall_u, hall_v, hall_w;
 
 // Pot value and duty cycle
 int pot_val, duty_cycle;
+const int max_duty_cycle = 255;
 
 // Function declarations
 void update_hall_sensors();
@@ -80,7 +81,7 @@ void setup() {
 
 void loop() {
   pot_val = analogRead(POT_PIN);
-  duty_cycle = map(pot_val, 0, 1023, 0, 127);
+  duty_cycle = map(pot_val, 0, 1023, 0, max_duty_cycle);
 
   // BLDC commutation logic
   if ((hall_u == HIGH && hall_v == HIGH && hall_w == HIGH) ||
