@@ -4,11 +4,11 @@
 
 // Pin definitions
 #define U_HI 6
-#define U_LO 5
+#define U_LO A0
 #define V_HI 10
-#define V_LO A0
+#define V_LO A1
 #define W_HI 13
-#define W_LO 12
+#define W_LO A2
 
 #define HALL_U 11
 #define HALL_V 3
@@ -17,6 +17,8 @@
 #define U_PUMP 2
 #define V_PUMP 0
 #define W_PUMP 1
+
+#define POT_PIN A5
 
 // // Define fast read/write operations
 // #ifndef CLR
@@ -27,16 +29,19 @@
 // #endif
 
 // Define register read/write operations
-#ifndef cbi
-#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
-#endif
-#ifndef sbi
-#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
-#endif
+// #ifndef cbi
+// #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+// #endif
+// #ifndef sbi
+// #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+// #endif
 
 
 // Hall sensor states
 bool hall_u, hall_v, hall_w;
+
+// Pot value and duty cycle
+int pot_val, duty_cycle;
 
 // Function declarations
 void update_hall_sensors();
@@ -74,11 +79,15 @@ void setup() {
 }
 
 void loop() {
+  pot_val = analogRead(POT_PIN);
+  duty_cycle = map(pot_val, 0, 1023, 0, 127);
+
   // BLDC commutation logic
   if ((hall_u == HIGH && hall_v == HIGH && hall_w == HIGH) ||
       (hall_u == LOW && hall_v == LOW && hall_w == LOW)) {
     // set error bit?
-    // return;
+
+    // Coast
     digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
     digitalWrite(V_HI, LOW);
@@ -94,7 +103,7 @@ void loop() {
     digitalWrite(W_LO, LOW);
 
     digitalWrite(U_LO, HIGH);
-    analogWrite(V_HI, 127);
+    analogWrite(V_HI, duty_cycle);
   } else if (hall_u == HIGH && hall_v == LOW && hall_w == LOW) {
     digitalWrite(U_HI, LOW);
     // digitalWrite(U_LO, LOW);
@@ -104,7 +113,7 @@ void loop() {
     digitalWrite(W_LO, LOW);
 
     digitalWrite(U_LO, HIGH);
-    analogWrite(W_HI, 127);
+    analogWrite(W_HI, duty_cycle);
   } else if (hall_u == HIGH && hall_v == HIGH && hall_w == LOW) {
     digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
@@ -114,7 +123,7 @@ void loop() {
     digitalWrite(W_LO, LOW);
 
     digitalWrite(V_LO, HIGH);
-    analogWrite(W_HI, 127);
+    analogWrite(W_HI, duty_cycle);
   } else if (hall_u == LOW && hall_v == HIGH && hall_w == LOW) {
     // digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
@@ -124,7 +133,7 @@ void loop() {
     digitalWrite(W_LO, LOW);
 
     digitalWrite(V_LO, HIGH);
-    analogWrite(U_HI, 127);
+    analogWrite(U_HI, duty_cycle);
   } else if (hall_u == LOW && hall_v == HIGH && hall_w == HIGH) {
     // digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
@@ -134,7 +143,7 @@ void loop() {
     // digitalWrite(W_LO, LOW);
 
     digitalWrite(W_LO, HIGH);
-    analogWrite(U_HI, 127);
+    analogWrite(U_HI, duty_cycle);
   } else if (hall_u == LOW && hall_v == LOW && hall_w == HIGH) {
     digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
@@ -144,7 +153,7 @@ void loop() {
     // digitalWrite(W_LO, LOW);
 
     digitalWrite(W_LO, HIGH);
-    analogWrite(V_HI, 127);
+    analogWrite(V_HI, duty_cycle);
   }
 
   // // Print some info
@@ -187,6 +196,7 @@ void charge_pump_u() {
   // sbi(PORTD, 1);  // INT1 -> PD1
   // cbi(PORTD, 1);
   digitalWrite(U_LO, HIGH);
+  digitalWrite(U_LO, LOW);
 }
 
 void charge_pump_v() {
@@ -194,6 +204,7 @@ void charge_pump_v() {
   // sbi(PORTD, 2); // INT2 -> PD2
   // cbi(PORTD, 2);
   digitalWrite(V_LO, HIGH);
+  digitalWrite(V_LO, LOW);
 }
 
 void charge_pump_w() {
@@ -201,4 +212,5 @@ void charge_pump_w() {
   // sbi(PORTD, 3);  // INT3 -> PD3
   // cbi(PORTD, 3);
   digitalWrite(W_LO, HIGH);
+  digitalWrite(W_LO, LOW);
 }
