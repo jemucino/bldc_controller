@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-// #include <EnableInterrupt.h>
+#include <EnableInterrupt.h>
 
 // Pin definitions
 #define U_HI 6
@@ -20,7 +20,7 @@
 
 #define POT_PIN A5
 
-// Define register read/write operations
+// Define register set/clear
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #endif
@@ -28,21 +28,17 @@
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
 
-// Define HALL sensor read macros
+// Define HALL sensor register read
 #define hall_v ((_SFR_BYTE(PIND) & _BV(PD0)) > 0) // INT0 -> PD0
 #define hall_u ((_SFR_BYTE(PINB) & _BV(PB7)) > 0) // PCINT7 -> PB7
 #define hall_w ((_SFR_BYTE(PINB) & _BV(PB5)) > 0) // PCINT5 -> PB5
-
-
-// // Hall sensor states
-// bool hall_u, hall_v, hall_w;
 
 // Pot value and duty cycle
 int pot_val, duty_cycle;
 const int max_duty_cycle = 250;
 
 // Function declarations
-// void update_hall_sensors();
+void update_commutation();
 
 void charge_pump_u();
 void charge_pump_v();
@@ -56,10 +52,6 @@ void myAnalogWrite(int pin, int value) {
   // } else if (pin == 13) {
   //   OCR4A=value;
   // }
-
-  // OCR4D=value;   // Set PWM value
-  // DDRD|=1<<7;    // Set Output Mode D7
-  // TCCR4C|=0x09;  // Activate channel D
 }
 
 void setup() {
@@ -79,12 +71,12 @@ void setup() {
   // update_hall_sensors();
 
   // Attach/enable interrupts
-  attachInterrupt(1, charge_pump_u, FALLING); // pin 2 -> INT1
-  attachInterrupt(2, charge_pump_v, FALLING); // pin 0 -> INT2
-  attachInterrupt(3, charge_pump_w, FALLING); // pin 1 -> INT3
-  // enableInterrupt(HALL_U, update_hall_sensors, CHANGE); // pin 11 -> PCINT7
-  // enableInterrupt(HALL_V, update_hall_sensors, CHANGE); // pin 3 -> INT0
-  // enableInterrupt(HALL_W, update_hall_sensors, CHANGE); // pin 9 -> PCINT5
+  enableInterrupt(U_PUMP, charge_pump_u, FALLING); // pin 2 -> INT1
+  enableInterrupt(V_PUMP, charge_pump_v, FALLING); // pin 0 -> INT2
+  enableInterrupt(W_PUMP, charge_pump_w, FALLING); // pin 1 -> INT3
+  enableInterrupt(HALL_U, update_commutation, CHANGE); // pin 11 -> PCINT7
+  enableInterrupt(HALL_V, update_commutation, CHANGE); // pin 3 -> INT0
+  enableInterrupt(HALL_W, update_commutation, CHANGE); // pin 9 -> PCINT5
 
   // Configure Timer4 for fast PWM
   TCCR1A &= ~_BV(COM1B1);
@@ -104,6 +96,22 @@ void setup() {
 void loop() {
   pot_val = analogRead(POT_PIN);
   duty_cycle = map(pot_val, 0, 1023, 0, max_duty_cycle);
+
+  update_commutation();
+
+  delay(20);
+}
+
+// ISR definitions
+
+void update_commutation() {
+  // // Print the hall sensor state
+  // Serial.print(hall_u);
+  // Serial.print("\t");
+  // Serial.print(hall_v);
+  // Serial.print("\t");
+  // Serial.print(hall_w);
+  // Serial.print("\n");
 
   // BLDC commutation logic
   if ((hall_u && hall_v && hall_w) ||
@@ -190,41 +198,7 @@ void loop() {
 
     // Serial.println("Phase VI");
   }
-
-  // // Print some info
-  // Serial.print(PIND, BIN);
-  // Serial.print("\t");
-  // Serial.print(PINB, BIN);
-  // Serial.print("\t");
-  // Serial.print(PB7);
-  // Serial.print("\t");
-  // Serial.print(PD0);
-  // Serial.print("\t");
-  // Serial.print(PB5);
-  // Serial.print("\t");
-  // Serial.print(1<<PD3, BIN);
-  // Serial.print("\n");
-  // Serial.print("\n");
-
-  // // Print the hall sensor state
-  // Serial.print(hall_u);
-  // Serial.print("\t");
-  // Serial.print(hall_v);
-  // Serial.print("\t");
-  // Serial.print(hall_w);
-  // Serial.print("\n");
-  //
-  // delay(100);
 }
-
-// ISR definitions
-
-// void update_hall_sensors() {
-//   // Update hall sensor states
-//   hall_u = _SFR_BYTE(PINB) & _BV(PB7); // PCINT7 -> PB7
-//   hall_v = _SFR_BYTE(PIND) & _BV(PD0); // INT0 -> PD0
-//   hall_w = _SFR_BYTE(PINB) & _BV(PB5); // PCINT5 -> PB5
-// }
 
 void charge_pump_u() {
   // U phase charge pump
