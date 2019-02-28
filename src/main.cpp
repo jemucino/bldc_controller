@@ -29,12 +29,12 @@
 // #endif
 
 // Define register read/write operations
-// #ifndef cbi
-// #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
-// #endif
-// #ifndef sbi
-// #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
-// #endif
+#ifndef cbi
+#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+#endif
+#ifndef sbi
+#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+#endif
 
 
 // Hall sensor states
@@ -75,8 +75,33 @@ void setup() {
   enableInterrupt(HALL_V, update_hall_sensors, CHANGE); // pin 3 -> INT0
   enableInterrupt(HALL_W, update_hall_sensors, CHANGE); // pin 9 -> PCINT5
 
+  // Configure Timer4 for fast PWM
+  TCCR1A &= ~(_BV(COM1B1));
+  TCCR4A |= _BV(COM4A1) | _BV(COM4B1) | _BV(PWM4A) | _BV(PWM4B);
+
+  TCCR4B &= (B11110000);    // Clear the existing prescaler bits
+  TCCR4B |= _BV(CS40);      // Set the new prescaler value (1:1)
+
+  TCCR4C |= _BV(COM4D1) | _BV(PWM4D);
+
+  TCCR4D &= (B11111100);    // Clear the WGM4x bits to set Fast PWM mode
+
   // // Initialize serial port
   // Serial.begin(9600);
+}
+
+void myAnalogWrite(int pin, int value) {
+  if (pin == 6) {
+    OCR4D=value;
+  } else if (pin == 10) {
+    OCR4B=value;
+  } else if (pin == 13) {
+    OCR4A=value;
+  }
+
+  // OCR4D=value;   // Set PWM value
+  // DDRD|=1<<7;    // Set Output Mode D7
+  // TCCR4C|=0x09;  // Activate channel D
 }
 
 void loop() {
@@ -98,7 +123,7 @@ void loop() {
   } else if (hall_u == HIGH && hall_v == LOW && hall_w == HIGH) {
     // digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
-    digitalWrite(V_HI, LOW);
+    myAnalogWrite(V_HI, 0);
     // digitalWrite(V_LO, LOW);
     digitalWrite(W_HI, LOW);
     digitalWrite(W_LO, LOW);
@@ -108,7 +133,7 @@ void loop() {
   } else if (hall_u == HIGH && hall_v == LOW && hall_w == LOW) {
     // digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
-    digitalWrite(V_HI, LOW);
+    myAnalogWrite(V_HI, 0);
     digitalWrite(V_LO, LOW);
     digitalWrite(W_HI, LOW);
     // digitalWrite(W_LO, LOW);
@@ -124,7 +149,7 @@ void loop() {
     // digitalWrite(W_LO, LOW);
 
     digitalWrite(W_LO, HIGH);
-    analogWrite(V_HI, duty_cycle);
+    myAnalogWrite(V_HI, duty_cycle);
   } else if (hall_u == LOW && hall_v == HIGH && hall_w == LOW) {
     digitalWrite(U_HI, LOW);
     // digitalWrite(U_LO, LOW);
@@ -134,11 +159,11 @@ void loop() {
     digitalWrite(W_LO, LOW);
 
     digitalWrite(U_LO, HIGH);
-    analogWrite(V_HI, duty_cycle);
+    myAnalogWrite(V_HI, duty_cycle);
   } else if (hall_u == LOW && hall_v == HIGH && hall_w == HIGH) {
     digitalWrite(U_HI, LOW);
     // digitalWrite(U_LO, LOW);
-    digitalWrite(V_HI, LOW);
+    myAnalogWrite(V_HI, 0);
     digitalWrite(V_LO, LOW);
     // digitalWrite(W_HI, LOW);
     digitalWrite(W_LO, LOW);
@@ -148,7 +173,7 @@ void loop() {
   } else if (hall_u == LOW && hall_v == LOW && hall_w == HIGH) {
     digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
-    digitalWrite(V_HI, LOW);
+    myAnalogWrite(V_HI, 0);
     // digitalWrite(V_LO, LOW);
     // digitalWrite(W_HI, LOW);
     digitalWrite(W_LO, LOW);
@@ -196,22 +221,18 @@ void charge_pump_u() {
   // U phase charge pump
   // sbi(PORTD, 1);  // INT1 -> PD1
   // cbi(PORTD, 1);
-  digitalWrite(U_LO, HIGH);
-  digitalWrite(U_LO, LOW);
+  PORTD |= 0x02;
+  PORTD &= 0xFD;
 }
 
 void charge_pump_v() {
   // V phase charge pump
-  // sbi(PORTD, 2); // INT2 -> PD2
-  // cbi(PORTD, 2);
-  digitalWrite(V_LO, HIGH);
-  digitalWrite(V_LO, LOW);
+  sbi(PORTD, 2); // INT2 -> PD2
+  cbi(PORTD, 2);
 }
 
 void charge_pump_w() {
   // W phase charge pump
-  // sbi(PORTD, 3);  // INT3 -> PD3
-  // cbi(PORTD, 3);
-  digitalWrite(W_LO, HIGH);
-  digitalWrite(W_LO, LOW);
+  sbi(PORTD, 3);  // INT3 -> PD3
+  cbi(PORTD, 3);
 }
