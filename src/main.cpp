@@ -105,8 +105,6 @@ void loop() {
   pot_val = analogRead(POT_PIN);
   duty_cycle = map(pot_val, 0, 1023, 0, max_duty_cycle);
 
-  Serial.println((hall_u && hall_v && hall_w));
-
   // BLDC commutation logic
   if ((hall_u && hall_v && hall_w) ||
       (!hall_u && !hall_v && !hall_w)) {
@@ -118,7 +116,7 @@ void loop() {
     digitalWrite(W_HI, LOW);
     digitalWrite(W_LO, LOW);
 
-    Serial.println("Coasting");
+    // Serial.println("Coasting");
   } else if (hall_u && !hall_v && hall_w) {
     // digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
@@ -130,7 +128,7 @@ void loop() {
     digitalWrite(V_LO, HIGH);
     analogWrite(U_HI, duty_cycle);
 
-    Serial.println("Phase I");
+    // Serial.println("Phase I");
   } else if (hall_u && !hall_v && !hall_w) {
     // digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
@@ -142,7 +140,7 @@ void loop() {
     digitalWrite(W_LO, HIGH);
     analogWrite(U_HI, duty_cycle);
 
-    Serial.println("Phase II");
+    // Serial.println("Phase II");
   } else if (hall_u && hall_v && !hall_w) {
     digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
@@ -154,7 +152,7 @@ void loop() {
     digitalWrite(W_LO, HIGH);
     myAnalogWrite(V_HI, duty_cycle);
 
-    Serial.println("Phase III");
+    // Serial.println("Phase III");
   } else if (!hall_u && hall_v && !hall_w) {
     digitalWrite(U_HI, LOW);
     // digitalWrite(U_LO, LOW);
@@ -166,7 +164,7 @@ void loop() {
     digitalWrite(U_LO, HIGH);
     myAnalogWrite(V_HI, duty_cycle);
 
-    Serial.println("Phase IV");
+    // Serial.println("Phase IV");
   } else if (!hall_u && hall_v && hall_w) {
     digitalWrite(U_HI, LOW);
     // digitalWrite(U_LO, LOW);
@@ -178,7 +176,7 @@ void loop() {
     digitalWrite(U_LO, HIGH);
     analogWrite(W_HI, duty_cycle);
 
-    Serial.println("Phase V");
+    // Serial.println("Phase V");
   } else if (!hall_u && !hall_v && hall_w) {
     digitalWrite(U_HI, LOW);
     digitalWrite(U_LO, LOW);
@@ -190,7 +188,7 @@ void loop() {
     digitalWrite(V_LO, HIGH);
     analogWrite(W_HI, duty_cycle);
 
-    Serial.println("Phase VI");
+    // Serial.println("Phase VI");
   }
 
   // // Print some info
