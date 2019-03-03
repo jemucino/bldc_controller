@@ -5,13 +5,13 @@
 // Pin definitions
 #define U_HI 6
 #define U_LO A0
-#define V_HI 10
+#define V_HI 12
 #define V_LO A1
 #define W_HI 13
 #define W_LO A2
 
 #define HALL_U 11 // pin 11 -> PCINT7
-#define HALL_V 3  // pin 3 -> INT0
+#define HALL_V 10 // pin 10 -> PCINT6
 #define HALL_W 9  // pin 9 -> PCINT5
 
 #define U_PUMP 2  // pin 2 -> INT1
@@ -29,12 +29,12 @@
 #endif
 
 // Define HALL sensor register read
-#define hall_v ((_SFR_BYTE(PIND) & _BV(PD0)) > 0) // INT0 -> PD0
 #define hall_u ((_SFR_BYTE(PINB) & _BV(PB7)) > 0) // PCINT7 -> PB7
+#define hall_v ((_SFR_BYTE(PINB) & _BV(PD6)) > 0) // PCINT6 -> PB6
 #define hall_w ((_SFR_BYTE(PINB) & _BV(PB5)) > 0) // PCINT5 -> PB5
 
 // Pot value and duty cycle
-int pot_val, duty_cycle;
+int pot_val;
 const int max_duty_cycle = 250;
 
 // Function declarations
@@ -44,14 +44,9 @@ void charge_pump_u();
 void charge_pump_v();
 void charge_pump_w();
 
-void myAnalogWrite(int pin, int value) {
-  // if (pin == 6) {
-    // OCR4D=value;
-  // } else if (pin == 10) {
-    OCR4B=value;
-  // } else if (pin == 13) {
-  //   OCR4A=value;
-  // }
+void set_duty_cycle(int value) {
+  // In PWM6 mode the duty cycle of all pins is control by the OCR4A register
+  OCR4A = value;  // Write to OCR4A register in 8-bit mode
 }
 
 void setup() {
@@ -68,26 +63,25 @@ void setup() {
   pinMode(HALL_V, INPUT_PULLUP);
   pinMode(HALL_W, INPUT_PULLUP);
 
-  // update_hall_sensors();
-
   // Attach/enable interrupts
   enableInterrupt(U_PUMP, charge_pump_u, FALLING); // pin 2 -> INT1
   enableInterrupt(V_PUMP, charge_pump_v, FALLING); // pin 0 -> INT2
   enableInterrupt(W_PUMP, charge_pump_w, FALLING); // pin 1 -> INT3
   enableInterrupt(HALL_U, update_commutation, CHANGE); // pin 11 -> PCINT7
-  enableInterrupt(HALL_V, update_commutation, CHANGE); // pin 3 -> INT0
+  enableInterrupt(HALL_V, update_commutation, CHANGE); // pin 10 -> PCINT6
   enableInterrupt(HALL_W, update_commutation, CHANGE); // pin 9 -> PCINT5
 
-  // Configure Timer4 for fast PWM
-  TCCR1A &= ~_BV(COM1B1);
-  TCCR4A |= _BV(COM4A1) | _BV(COM4B1) | _BV(PWM4A) | _BV(PWM4B);
+  // Configure for PWM6 on PD6, PD7, and PC7
+  TCCR4A |= _BV(PWM4A);   // Enables PWM mode based on comparator OCR4A
 
-  TCCR4B &= (B11110000);    // Clear the existing prescaler bits
-  TCCR4B |= _BV(CS40);      // Set the new prescaler value (1:1)
+  TCCR4A |= _BV(COM4A1);  // Set OC4A mode
+  TCCR4C |= _BV(COM4D1);  // Set OC4D and _OC4D_ mode
 
-  TCCR4C |= _BV(COM4D1) | _BV(PWM4D);
+  TCCR4B &= (B11110000);  // Clear the existing prescaler bits
+  TCCR4B |= _BV(CS40);    // Set the new prescaler value (1:1)
 
-  TCCR4D &= (B11111100);    // Clear the WGM4x bits to set Fast PWM mode
+  TCCR4D |= _BV(WGM41);   // Set the WGM41 bit to set PWM6 mode
+  TCCR4D &= ~_BV(WGM40);  // Clear the WGM40 bit to set single-slope mode
 
   // // Initialize serial port
   // Serial.begin(9600);
@@ -95,106 +89,102 @@ void setup() {
 
 void loop() {
   pot_val = analogRead(POT_PIN);
-  duty_cycle = map(pot_val, 0, 1023, 0, max_duty_cycle);
+  set_duty_cycle(map(pot_val, 0, 1023, 0, max_duty_cycle));
 
   update_commutation();
 
   delay(20);
+
+  // // Print debug info
+  // Serial.println(OCR4A, HEX);
+  // Serial.println(OCR4C, HEX);
 }
 
 // ISR definitions
 
 void update_commutation() {
-  // // Print the hall sensor state
-  // Serial.print(hall_u);
-  // Serial.print("\t");
-  // Serial.print(hall_v);
-  // Serial.print("\t");
-  // Serial.print(hall_w);
-  // Serial.print("\n");
-
   // BLDC commutation logic
   if ((hall_u && hall_v && hall_w) ||
       (!hall_u && !hall_v && !hall_w)) {
     // Coast
-    digitalWrite(U_HI, LOW);
+    cbi(TCCR4E,OC4OE5);
     digitalWrite(U_LO, LOW);
-    digitalWrite(V_HI, LOW);
+    cbi(TCCR4E,OC4OE4);
     digitalWrite(V_LO, LOW);
-    digitalWrite(W_HI, LOW);
+    cbi(TCCR4E,OC4OE1);
     digitalWrite(W_LO, LOW);
 
     // Serial.println("Coasting");
   } else if (hall_u && !hall_v && hall_w) {
-    // digitalWrite(U_HI, LOW);
+    // cbi(TCCR4E,OC4OE5);
     digitalWrite(U_LO, LOW);
-    myAnalogWrite(V_HI, 0);
+    cbi(TCCR4E,OC4OE4);
     // digitalWrite(V_LO, LOW);
-    digitalWrite(W_HI, LOW);
+    cbi(TCCR4E,OC4OE1);
     digitalWrite(W_LO, LOW);
 
     digitalWrite(V_LO, HIGH);
-    analogWrite(U_HI, duty_cycle);
+    sbi(TCCR4E,OC4OE5);
 
     // Serial.println("Phase I");
   } else if (hall_u && !hall_v && !hall_w) {
-    // digitalWrite(U_HI, LOW);
+    // cbi(TCCR4E,OC4OE5);
     digitalWrite(U_LO, LOW);
-    myAnalogWrite(V_HI, 0);
+    cbi(TCCR4E,OC4OE4);
     digitalWrite(V_LO, LOW);
-    digitalWrite(W_HI, LOW);
+    cbi(TCCR4E,OC4OE1);
     // digitalWrite(W_LO, LOW);
 
     digitalWrite(W_LO, HIGH);
-    analogWrite(U_HI, duty_cycle);
+    sbi(TCCR4E,OC4OE5);
 
     // Serial.println("Phase II");
   } else if (hall_u && hall_v && !hall_w) {
-    digitalWrite(U_HI, LOW);
+    cbi(TCCR4E,OC4OE5);
     digitalWrite(U_LO, LOW);
-    // digitalWrite(V_HI, LOW);
+    // cbi(TCCR4E,OC4OE4);
     digitalWrite(V_LO, LOW);
-    digitalWrite(W_HI, LOW);
+    cbi(TCCR4E,OC4OE1);
     // digitalWrite(W_LO, LOW);
 
     digitalWrite(W_LO, HIGH);
-    myAnalogWrite(V_HI, duty_cycle);
+    sbi(TCCR4E,OC4OE4);
 
     // Serial.println("Phase III");
   } else if (!hall_u && hall_v && !hall_w) {
-    digitalWrite(U_HI, LOW);
+    cbi(TCCR4E,OC4OE5);
     // digitalWrite(U_LO, LOW);
-    // digitalWrite(V_HI, LOW);
+    // cbi(TCCR4E,OC4OE4);
     digitalWrite(V_LO, LOW);
-    digitalWrite(W_HI, LOW);
+    cbi(TCCR4E,OC4OE1);
     digitalWrite(W_LO, LOW);
 
     digitalWrite(U_LO, HIGH);
-    myAnalogWrite(V_HI, duty_cycle);
+    sbi(TCCR4E,OC4OE4);
 
     // Serial.println("Phase IV");
   } else if (!hall_u && hall_v && hall_w) {
-    digitalWrite(U_HI, LOW);
+    cbi(TCCR4E,OC4OE5);
     // digitalWrite(U_LO, LOW);
-    myAnalogWrite(V_HI, 0);
+    cbi(TCCR4E,OC4OE4);
     digitalWrite(V_LO, LOW);
-    // digitalWrite(W_HI, LOW);
+    // cbi(TCCR4E,OC4OE1);
     digitalWrite(W_LO, LOW);
 
     digitalWrite(U_LO, HIGH);
-    analogWrite(W_HI, duty_cycle);
+    sbi(TCCR4E,OC4OE1);
 
     // Serial.println("Phase V");
   } else if (!hall_u && !hall_v && hall_w) {
-    digitalWrite(U_HI, LOW);
+    cbi(TCCR4E,OC4OE5);
     digitalWrite(U_LO, LOW);
-    myAnalogWrite(V_HI, 0);
+    cbi(TCCR4E,OC4OE4);
     // digitalWrite(V_LO, LOW);
-    // digitalWrite(W_HI, LOW);
+    // cbi(TCCR4E,OC4OE1);
     digitalWrite(W_LO, LOW);
 
     digitalWrite(V_LO, HIGH);
-    analogWrite(W_HI, duty_cycle);
+    sbi(TCCR4E,OC4OE1);
 
     // Serial.println("Phase VI");
   }
