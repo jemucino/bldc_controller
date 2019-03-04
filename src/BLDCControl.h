@@ -35,7 +35,7 @@
 
 // Define HALL sensor register read
 #define hall_u ((_SFR_BYTE(PINB) & _BV(PB7)) > 0) // PCINT7 -> PB7
-#define hall_v ((_SFR_BYTE(PINB) & _BV(PD6)) > 0) // PCINT6 -> PB6
+#define hall_v ((_SFR_BYTE(PINB) & _BV(PB6)) > 0) // PCINT6 -> PB6
 #define hall_w ((_SFR_BYTE(PINB) & _BV(PB5)) > 0) // PCINT5 -> PB5
 
 class BLDCControl {
