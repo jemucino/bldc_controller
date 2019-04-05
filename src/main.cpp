@@ -2,6 +2,9 @@
 
 #include <BLDCControl.h>
 
+// Define pins
+#define POT_PIN A6
+
 // Pot value and duty cycle
 int pot_val;
 const int max_duty_cycle = 250;

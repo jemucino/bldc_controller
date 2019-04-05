@@ -8,16 +8,107 @@
 
 #include "BLDCControl.h"
 
-#include <EnableInterrupt.h>
+// #include <EnableInterrupt.h>
+
+// Initialize direction
+static bool BLDCControl::direction = 0;
+
+// BLDC commutation functions
+void uv() {
+    // cbi(TCCR4E,OC4OE5);
+    cbi(PORTF, PF7);
+    cbi(TCCR4E,OC4OE4);
+    // cbi(PORTF, PF6);
+    cbi(TCCR4E,OC4OE1);
+    cbi(PORTF, PF5);
+
+    sbi(PORTF, PF6);
+    sbi(TCCR4E,OC4OE5);
+}
+
+void uw() {
+  // cbi(TCCR4E,OC4OE5);
+  cbi(PORTF, PF7);
+  cbi(TCCR4E,OC4OE4);
+  cbi(PORTF, PF6);
+  cbi(TCCR4E,OC4OE1);
+  // cbi(PORTF, PF5);
+
+  sbi(PORTF, PF5);
+  sbi(TCCR4E,OC4OE5);
+}
+
+void vw() {
+  cbi(TCCR4E,OC4OE5);
+  cbi(PORTF, PF7);
+  // cbi(TCCR4E,OC4OE4);
+  cbi(PORTF, PF6);
+  cbi(TCCR4E,OC4OE1);
+  // cbi(PORTF, PF5);
+
+  sbi(PORTF, PF5);
+  sbi(TCCR4E,OC4OE4);
+}
+
+void vu() {
+  cbi(TCCR4E,OC4OE5);
+  // cbi(PORTF, PF7);
+  // cbi(TCCR4E,OC4OE4);
+  cbi(PORTF, PF6);
+  cbi(TCCR4E,OC4OE1);
+  cbi(PORTF, PF5);
+
+  sbi(PORTF, PF7);
+  sbi(TCCR4E,OC4OE4);
+}
+
+void wu() {
+  cbi(TCCR4E,OC4OE5);
+  // cbi(PORTF, PF7);
+  cbi(TCCR4E,OC4OE4);
+  cbi(PORTF, PF6);
+  // cbi(TCCR4E,OC4OE1);
+  cbi(PORTF, PF5);
+
+  sbi(PORTF, PF7);
+  sbi(TCCR4E,OC4OE1);
+}
+
+void wv() {
+  cbi(TCCR4E,OC4OE5);
+  cbi(PORTF, PF7);
+  cbi(TCCR4E,OC4OE4);
+  // cbi(PORTF, PF6);
+  // cbi(TCCR4E,OC4OE1);
+  cbi(PORTF, PF5);
+
+  sbi(PORTF, PF6);
+  sbi(TCCR4E,OC4OE1);
+}
+
+void coast() {
+  // Coast
+  cbi(TCCR4E,OC4OE5);
+  cbi(PORTF, PF7);
+  cbi(TCCR4E,OC4OE4);
+  cbi(PORTF, PF6);
+  cbi(TCCR4E,OC4OE1);
+  cbi(PORTF, PF5);
+}
+
+// BLDC commutation lookup table
+void  (*commutation_functions[])() = {coast, vw, uv, uw, wu, vu, wv, coast, coast, wv, vu, wu, uw, uv, vw, coast};
 
 BLDCControl::BLDCControl() {
-  // Set bridge pins to outputs
-  pinMode(U_HI, OUTPUT);  // sets the pin as output
+  // Set low side switch pins to outputs
   pinMode(U_LO, OUTPUT);  // sets the pin as output
-  pinMode(V_HI, OUTPUT);  // sets the pin as output
   pinMode(V_LO, OUTPUT);  // sets the pin as output
-  pinMode(W_HI, OUTPUT);  // sets the pin as output
   pinMode(W_LO, OUTPUT);  // sets the pin as output
+
+  // Assign high side switch pins to PWM hw
+  HwPWM0.addPin(U_HI);
+  HwPWM0.addPin(V_HI);
+  HwPWM0.addPin(W_HI);
 
   // Set hall pins to inputs with pullups and initialize
   pinMode(HALL_U, INPUT_PULLUP);
@@ -25,12 +116,12 @@ BLDCControl::BLDCControl() {
   pinMode(HALL_W, INPUT_PULLUP);
 
   // Attach/enable interrupts
-  enableInterrupt(U_PUMP, charge_pump_u, FALLING); // pin 2 -> INT1
-  enableInterrupt(V_PUMP, charge_pump_v, FALLING); // pin 0 -> INT2
-  enableInterrupt(W_PUMP, charge_pump_w, FALLING); // pin 1 -> INT3
-  enableInterrupt(HALL_U, update_commutation, CHANGE); // pin 11 -> PCINT7
-  enableInterrupt(HALL_V, update_commutation, CHANGE); // pin 10 -> PCINT6
-  enableInterrupt(HALL_W, update_commutation, CHANGE); // pin 9 -> PCINT5
+  // enableInterrupt(U_PUMP, charge_pump_u, FALLING); // pin 2 -> INT1
+  // enableInterrupt(V_PUMP, charge_pump_v, FALLING); // pin 0 -> INT2
+  // enableInterrupt(W_PUMP, charge_pump_w, FALLING); // pin 1 -> INT3
+  attachInterrupt(HALL_U, update_commutation, CHANGE); // pin 11 -> PCINT7
+  attachInterrupt(HALL_V, update_commutation, CHANGE); // pin 10 -> PCINT6
+  attachInterrupt(HALL_W, update_commutation, CHANGE); // pin 9 -> PCINT5
 }
 
 void BLDCControl::initialize() {
@@ -50,99 +141,27 @@ void BLDCControl::initialize() {
   update_commutation();
 }
 
+void BLDCControl::rate_command(int duty_cycle, bool direction) {
+  set_duty_cycle(duty_cycle);
+  set_direction(direction);
+  update_commutation();
+}
+
 void BLDCControl::set_duty_cycle(int value) {
   // In PWM6 mode the duty cycle of all pins is control by the OCR4A register
   OCR4A = value;  // Write to OCR4A register in 8-bit mode
 }
 
+void BLDCControl::set_direction(bool value) {
+  // In PWM6 mode the duty cycle of all pins is control by the OCR4A register
+  direction = value;  // Write to OCR4A register in 8-bit mode
+}
+
 // ISR definitions
 
 void BLDCControl::update_commutation() {
-  // BLDC commutation logic
-  if ((hall_u && hall_v && hall_w) ||
-      (!hall_u && !hall_v && !hall_w)) {
-    // Coast
-    cbi(TCCR4E,OC4OE5);
-    digitalWrite(U_LO, LOW);
-    cbi(TCCR4E,OC4OE4);
-    digitalWrite(V_LO, LOW);
-    cbi(TCCR4E,OC4OE1);
-    digitalWrite(W_LO, LOW);
-
-    // Serial.println("Coasting");
-  } else if (hall_u && !hall_v && hall_w) {
-    // cbi(TCCR4E,OC4OE5);
-    digitalWrite(U_LO, LOW);
-    cbi(TCCR4E,OC4OE4);
-    // digitalWrite(V_LO, LOW);
-    cbi(TCCR4E,OC4OE1);
-    digitalWrite(W_LO, LOW);
-
-    digitalWrite(V_LO, HIGH);
-    sbi(TCCR4E,OC4OE5);
-
-    // Serial.println("Phase I");
-  } else if (hall_u && !hall_v && !hall_w) {
-    // cbi(TCCR4E,OC4OE5);
-    digitalWrite(U_LO, LOW);
-    cbi(TCCR4E,OC4OE4);
-    digitalWrite(V_LO, LOW);
-    cbi(TCCR4E,OC4OE1);
-    // digitalWrite(W_LO, LOW);
-
-    digitalWrite(W_LO, HIGH);
-    sbi(TCCR4E,OC4OE5);
-
-    // Serial.println("Phase II");
-  } else if (hall_u && hall_v && !hall_w) {
-    cbi(TCCR4E,OC4OE5);
-    digitalWrite(U_LO, LOW);
-    // cbi(TCCR4E,OC4OE4);
-    digitalWrite(V_LO, LOW);
-    cbi(TCCR4E,OC4OE1);
-    // digitalWrite(W_LO, LOW);
-
-    digitalWrite(W_LO, HIGH);
-    sbi(TCCR4E,OC4OE4);
-
-    // Serial.println("Phase III");
-  } else if (!hall_u && hall_v && !hall_w) {
-    cbi(TCCR4E,OC4OE5);
-    // digitalWrite(U_LO, LOW);
-    // cbi(TCCR4E,OC4OE4);
-    digitalWrite(V_LO, LOW);
-    cbi(TCCR4E,OC4OE1);
-    digitalWrite(W_LO, LOW);
-
-    digitalWrite(U_LO, HIGH);
-    sbi(TCCR4E,OC4OE4);
-
-    // Serial.println("Phase IV");
-  } else if (!hall_u && hall_v && hall_w) {
-    cbi(TCCR4E,OC4OE5);
-    // digitalWrite(U_LO, LOW);
-    cbi(TCCR4E,OC4OE4);
-    digitalWrite(V_LO, LOW);
-    // cbi(TCCR4E,OC4OE1);
-    digitalWrite(W_LO, LOW);
-
-    digitalWrite(U_LO, HIGH);
-    sbi(TCCR4E,OC4OE1);
-
-    // Serial.println("Phase V");
-  } else if (!hall_u && !hall_v && hall_w) {
-    cbi(TCCR4E,OC4OE5);
-    digitalWrite(U_LO, LOW);
-    cbi(TCCR4E,OC4OE4);
-    // digitalWrite(V_LO, LOW);
-    // cbi(TCCR4E,OC4OE1);
-    digitalWrite(W_LO, LOW);
-
-    digitalWrite(V_LO, HIGH);
-    sbi(TCCR4E,OC4OE1);
-
-    // Serial.println("Phase VI");
-  }
+  // BLDC commutation lookup table
+  (*commutation_functions[((direction<<3)|(hall_u<<2)|(hall_v<<1)|(hall_w))])();
 }
 
 void BLDCControl::charge_pump_u() {
@@ -161,4 +180,45 @@ void BLDCControl::charge_pump_w() {
   // W phase charge pump
   sbi(PORTD, 3);  // INT3 -> PD3
   cbi(PORTD, 3);
+}
+
+void BLDCControl::initialize_blank() {
+  // Set up pin A in toggle mode, inital value low
+  NRF_GPIOTE->CONFIG[GPIOTE_CH_A] = GPIOTE_CONFIG_MODE_Task       << GPIOTE_CONFIG_MODE_Pos |
+                                    GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos |
+                                    GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
+                                    PIN_A                         << GPIOTE_CONFIG_PSEL_Pos;
+  NRF_GPIOTE->CONFIG[GPIOTE_CH_B] = GPIOTE_CONFIG_MODE_Task       << GPIOTE_CONFIG_MODE_Pos |
+                                    GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos |
+                                    GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
+                                    PIN_B                         << GPIOTE_CONFIG_PSEL_Pos;
+  NRF_GPIOTE->CONFIG[GPIOTE_CH_C] = GPIOTE_CONFIG_MODE_Task       << GPIOTE_CONFIG_MODE_Pos |
+                                    GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos |
+                                    GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
+                                    PIN_C                         << GPIOTE_CONFIG_PSEL_Pos;
+  // Set up TIMER4
+  NRF_TIMER4->BITMODE                 = TIMER_BITMODE_BITMODE_32Bit << TIMER_BITMODE_BITMODE_Pos;
+  NRF_TIMER4->PRESCALER               = 0;
+  NRF_TIMER4->SHORTS                  = TIMER_SHORTS_COMPARE5_CLEAR_Msk;
+  NRF_TIMER4->MODE                    = TIMER_MODE_MODE_Timer << TIMER_MODE_MODE_Pos;
+  NRF_TIMER4->CC[3]                   = 2;
+  NRF_TIMER4->CC[4]                   = 4;
+  NRF_TIMER4->CC[5]                   = 6;
+
+  // Have CC[0] in the timer toggle both pin A and pin B (using the FORK feature to control two tasks)
+  NRF_PPI->CH[PPI_CH_A].EEP   = (uint32_t)&NRF_PWM0->EVENTS_PWMPERIODEND;
+  NRF_PPI->CH[PPI_CH_A].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_A];
+  NRF_PPI->FORK[PPI_CH_A].TEP = (uint32_t)&NRF_TIMER4->TASKS_START;
+  NRF_PPI->CH[PPI_CH_B].EEP   = (uint32_t)&NRF_TIMER4->EVENTS_COMPARE[3];
+  NRF_PPI->CH[PPI_CH_B].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_A];
+  NRF_PPI->FORK[PPI_CH_B].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_B];
+  NRF_PPI->CH[PPI_CH_C].EEP   = (uint32_t)&NRF_TIMER4->EVENTS_COMPARE[4];
+  NRF_PPI->CH[PPI_CH_C].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_B];
+  NRF_PPI->FORK[PPI_CH_C].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_C];
+  NRF_PPI->CH[PPI_CH_D].EEP   = (uint32_t)&NRF_TIMER4->EVENTS_COMPARE[5];
+  NRF_PPI->CH[PPI_CH_D].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_C];
+  NRF_PPI->FORK[PPI_CH_D].TEP = (uint32_t)&NRF_TIMER4->TASKS_STOP;
+
+  // Enable the appropriate PPI channels and timer interrupts
+  NRF_PPI->CHENSET = (1 << PPI_CH_A) | (1 << PPI_CH_B) | (1 << PPI_CH_C) | (1 << PPI_CH_D);
 }
