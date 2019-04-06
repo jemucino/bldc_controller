@@ -8,42 +8,36 @@
 #include <Arduino.h>
 
 // Pin definitions
-#define U_HI 21
-#define U_LO 20
-#define V_HI 19
-#define V_LO 29
-#define W_HI 25
-#define W_LO 30
+#define U_HI          2
+#define U_LO          3
+#define V_HI          4
+#define V_LO          5
+#define W_HI          15
+#define W_LO          16
 
-// Interrupt assignments for Feather 32u4
-// pin 11 -> PCINT7
-// pin 10 -> PCINT6
-// pin 9 -> PCINT5
-// pin 2 -> INT1
-// pin 0 -> INT2
-// pin 1 -> INT3
+#define HALL_U        25
+#define HALL_V        26
+#define HALL_W        27
+#define HALL_UVW_IN   (((NRF_GPIO->IN)&0x0E000000)>>25)
 
-// Interrupt assignments for Feather nrf52
-// The interrupt number follows the peripheral ID
+#define U_I           15
+#define V_I           16
+#define W_I           17
 
-#define HALL_U 18
-#define HALL_V 5
-#define HALL_W 6
+/*
+NOTES:
+- When Nordic SoftDecice is enabled:
+  - Only PPI channels 0-16 are available
+  - All GPIOTE channels available
+  - TIMER1 and TIMER2 are available, TIMER0 access is blocked
+  - PWM1 and PWM2 are available, PWM0 access is unknown
+  - EGU0 and EGU3 are available; EGU1 is restricted; and EGU2, EGU4, and EGU5 are blocked
+- ...
+*/
 
-// #define U_PUMP
-// #define V_PUMP
-// #define W_PUMP
-
-#define U_I 15
-#define V_I 16
-#define W_I 17
-
-// Define nrf52832 peripheral channels
-#define GPIOTE_CH_A 0
-#define PIN_A       7
-
-#define PPI_CH_A    0
-
-#define PPI_CH_B    1
+// Define which peripherals to use for bridge control
+#define BRIDGE_TIMER  NRF_TIMER4 // Must be TIMER3 or TIMER4
+#define BRIDGE_PWM    NRF_PWM1
+#define BRIDGE_EGU    NRF_EGU0
 
 #endif

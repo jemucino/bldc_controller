@@ -10,215 +10,263 @@
 
 // #include <EnableInterrupt.h>
 
-// Initialize direction
-static bool BLDCControl::direction = 0;
+// Initialize direction and duty cycle
+bool BLDCControl::direction = 0;
+uint8_t BLDCControl::duty_cycle = 0;
+uint16_t BLDCControl::pwm_seq[4] = {0, 0, 0, 0};
+const uint16_t pwm_seq_zero[4] = {0x8000, 0x8000, 0x8000, 0x8000};
 
 // BLDC commutation functions
 void uv() {
-    // cbi(TCCR4E,OC4OE5);
-    cbi(PORTF, PF7);
-    cbi(TCCR4E,OC4OE4);
-    // cbi(PORTF, PF6);
-    cbi(TCCR4E,OC4OE1);
-    cbi(PORTF, PF5);
+  // Open all bridge switches
+  memcpy(BLDCControl::pwm_seq, pwm_seq_zero, sizeof(BLDCControl::pwm_seq));
+  BRIDGE_EGU->TASKS_TRIGGER[UVW_LO_DIS_EGU_CH] = 1;
 
-    sbi(PORTF, PF6);
-    sbi(TCCR4E,OC4OE5);
+  // Close U_HI and V_LO switches
+  BLDCControl::pwm_seq[U_HI_PWM_CH] = (uint8_t) ~BLDCControl::duty_cycle;
+  BRIDGE_EGU->TASKS_TRIGGER[V_LO_ENA_EGU_CH] = 1;
 }
 
 void uw() {
-  // cbi(TCCR4E,OC4OE5);
-  cbi(PORTF, PF7);
-  cbi(TCCR4E,OC4OE4);
-  cbi(PORTF, PF6);
-  cbi(TCCR4E,OC4OE1);
-  // cbi(PORTF, PF5);
+  // Open all bridge switches
+  memcpy(BLDCControl::pwm_seq, pwm_seq_zero, sizeof(BLDCControl::pwm_seq));
+  BRIDGE_EGU->TASKS_TRIGGER[UVW_LO_DIS_EGU_CH] = 1;
 
-  sbi(PORTF, PF5);
-  sbi(TCCR4E,OC4OE5);
+  // Close U_HI and W_LO switches
+  BLDCControl::pwm_seq[U_HI_PWM_CH] = (uint8_t) ~BLDCControl::duty_cycle;
+  BRIDGE_EGU->TASKS_TRIGGER[W_LO_ENA_EGU_CH] = 1;
 }
 
 void vw() {
-  cbi(TCCR4E,OC4OE5);
-  cbi(PORTF, PF7);
-  // cbi(TCCR4E,OC4OE4);
-  cbi(PORTF, PF6);
-  cbi(TCCR4E,OC4OE1);
-  // cbi(PORTF, PF5);
+  // Open all bridge switches
+  memcpy(BLDCControl::pwm_seq, pwm_seq_zero, sizeof(BLDCControl::pwm_seq));
+  BRIDGE_EGU->TASKS_TRIGGER[UVW_LO_DIS_EGU_CH] = 1;
 
-  sbi(PORTF, PF5);
-  sbi(TCCR4E,OC4OE4);
+  // Close V_HI and W_LO switches
+  BLDCControl::pwm_seq[V_HI_PWM_CH] = (uint8_t) ~BLDCControl::duty_cycle;
+  BRIDGE_EGU->TASKS_TRIGGER[W_LO_ENA_EGU_CH] = 1;
 }
 
 void vu() {
-  cbi(TCCR4E,OC4OE5);
-  // cbi(PORTF, PF7);
-  // cbi(TCCR4E,OC4OE4);
-  cbi(PORTF, PF6);
-  cbi(TCCR4E,OC4OE1);
-  cbi(PORTF, PF5);
+  // Open all bridge switches
+  memcpy(BLDCControl::pwm_seq, pwm_seq_zero, sizeof(BLDCControl::pwm_seq));
+  BRIDGE_EGU->TASKS_TRIGGER[UVW_LO_DIS_EGU_CH] = 1;
 
-  sbi(PORTF, PF7);
-  sbi(TCCR4E,OC4OE4);
+  // Close V_HI and U_LO switches
+  BLDCControl::pwm_seq[V_HI_PWM_CH] = (uint8_t) ~BLDCControl::duty_cycle;
+  BRIDGE_EGU->TASKS_TRIGGER[U_LO_ENA_EGU_CH] = 1;
 }
 
 void wu() {
-  cbi(TCCR4E,OC4OE5);
-  // cbi(PORTF, PF7);
-  cbi(TCCR4E,OC4OE4);
-  cbi(PORTF, PF6);
-  // cbi(TCCR4E,OC4OE1);
-  cbi(PORTF, PF5);
+  // Open all bridge switches
+  memcpy(BLDCControl::pwm_seq, pwm_seq_zero, sizeof(BLDCControl::pwm_seq));
+  BRIDGE_EGU->TASKS_TRIGGER[UVW_LO_DIS_EGU_CH] = 1;
 
-  sbi(PORTF, PF7);
-  sbi(TCCR4E,OC4OE1);
+  // Close W_HI and U_LO switches
+  BLDCControl::pwm_seq[W_HI_PWM_CH] = (uint8_t) ~BLDCControl::duty_cycle;
+  BRIDGE_EGU->TASKS_TRIGGER[U_LO_ENA_EGU_CH] = 1;
 }
 
 void wv() {
-  cbi(TCCR4E,OC4OE5);
-  cbi(PORTF, PF7);
-  cbi(TCCR4E,OC4OE4);
-  // cbi(PORTF, PF6);
-  // cbi(TCCR4E,OC4OE1);
-  cbi(PORTF, PF5);
+  // Open all bridge switches
+  memcpy(BLDCControl::pwm_seq, pwm_seq_zero, sizeof(BLDCControl::pwm_seq));
+  BRIDGE_EGU->TASKS_TRIGGER[UVW_LO_DIS_EGU_CH] = 1;
 
-  sbi(PORTF, PF6);
-  sbi(TCCR4E,OC4OE1);
+  // Close W_HI and V_LO switches
+  BLDCControl::pwm_seq[W_HI_PWM_CH] = (uint8_t) ~BLDCControl::duty_cycle;
+  BRIDGE_EGU->TASKS_TRIGGER[V_LO_ENA_EGU_CH] = 1;
 }
 
 void coast() {
-  // Coast
-  cbi(TCCR4E,OC4OE5);
-  cbi(PORTF, PF7);
-  cbi(TCCR4E,OC4OE4);
-  cbi(PORTF, PF6);
-  cbi(TCCR4E,OC4OE1);
-  cbi(PORTF, PF5);
+  // Open all bridge switches
+  memcpy(BLDCControl::pwm_seq, pwm_seq_zero, sizeof(BLDCControl::pwm_seq));
+  BRIDGE_EGU->TASKS_TRIGGER[UVW_LO_DIS_EGU_CH] = 1;
+}
+
+void brake() {
+  // Open all high-side switches
+  memcpy(BLDCControl::pwm_seq, pwm_seq_zero, sizeof(BLDCControl::pwm_seq));
+
+  // Close all low-side switches
+  BRIDGE_EGU->TASKS_TRIGGER[U_LO_ENA_EGU_CH] = 1;
+  BRIDGE_EGU->TASKS_TRIGGER[V_LO_ENA_EGU_CH] = 1;
+  BRIDGE_EGU->TASKS_TRIGGER[W_LO_ENA_EGU_CH] = 1;
 }
 
 // BLDC commutation lookup table
 void  (*commutation_functions[])() = {coast, vw, uv, uw, wu, vu, wv, coast, coast, wv, vu, wu, uw, uv, vw, coast};
 
 BLDCControl::BLDCControl() {
-  // Set low side switch pins to outputs
-  pinMode(U_LO, OUTPUT);  // sets the pin as output
-  pinMode(V_LO, OUTPUT);  // sets the pin as output
-  pinMode(W_LO, OUTPUT);  // sets the pin as output
-
-  // Assign high side switch pins to PWM hw
-  HwPWM0.addPin(U_HI);
-  HwPWM0.addPin(V_HI);
-  HwPWM0.addPin(W_HI);
-
-  // Set hall pins to inputs with pullups and initialize
+  // Set hall sensor pins to inputs with pullups and initialize
   pinMode(HALL_U, INPUT_PULLUP);
   pinMode(HALL_V, INPUT_PULLUP);
   pinMode(HALL_W, INPUT_PULLUP);
 
-  // Attach/enable interrupts
-  // enableInterrupt(U_PUMP, charge_pump_u, FALLING); // pin 2 -> INT1
-  // enableInterrupt(V_PUMP, charge_pump_v, FALLING); // pin 0 -> INT2
-  // enableInterrupt(W_PUMP, charge_pump_w, FALLING); // pin 1 -> INT3
-  attachInterrupt(HALL_U, update_commutation, CHANGE); // pin 11 -> PCINT7
-  attachInterrupt(HALL_V, update_commutation, CHANGE); // pin 10 -> PCINT6
-  attachInterrupt(HALL_W, update_commutation, CHANGE); // pin 9 -> PCINT5
+  // Attach interrupts to hall sensor pins
+ attachInterrupt(HALL_U, update_commutation, CHANGE);
+ attachInterrupt(HALL_V, update_commutation, CHANGE);
+ attachInterrupt(HALL_W, update_commutation, CHANGE);
 }
 
 void BLDCControl::initialize() {
-  // Configure for PWM6 on PD6, PD7, and PC7
-  TCCR4A |= _BV(PWM4A);   // Enables PWM mode based on comparator OCR4A
+  // Initialize the three phase bridge
+  initialize_three_phase_bridge();
 
-  TCCR4A |= _BV(COM4A1);  // Set OC4A mode
-  TCCR4C |= _BV(COM4D1);  // Set OC4D and _OC4D_ mode
-
-  TCCR4B &= (B11110000);  // Clear the existing prescaler bits
-  TCCR4B |= _BV(CS40);    // Set the new prescaler value (1:1)
-
-  TCCR4D |= _BV(WGM41);   // Set the WGM41 bit to set PWM6 mode
-  TCCR4D &= ~_BV(WGM40);  // Clear the WGM40 bit to set single-slope mode
+  // // Attach interrupts to hall sensor pins
+  // attachInterrupt(HALL_U, update_commutation, CHANGE);
+  // attachInterrupt(HALL_V, update_commutation, CHANGE);
+  // attachInterrupt(HALL_W, update_commutation, CHANGE);
 
   // Initialize hall sensors
   update_commutation();
 }
 
-void BLDCControl::rate_command(int duty_cycle, bool direction) {
-  set_duty_cycle(duty_cycle);
-  set_direction(direction);
+void BLDCControl::rate_command(uint duty_cycle_cmd, bool direction_cmd) {
+  // Set commutation direction and duty cycle
+  duty_cycle = duty_cycle_cmd;
+  direction = direction_cmd;
+
+  // Update commutation
   update_commutation();
 }
 
-void BLDCControl::set_duty_cycle(int value) {
-  // In PWM6 mode the duty cycle of all pins is control by the OCR4A register
-  OCR4A = value;  // Write to OCR4A register in 8-bit mode
-}
-
-void BLDCControl::set_direction(bool value) {
-  // In PWM6 mode the duty cycle of all pins is control by the OCR4A register
-  direction = value;  // Write to OCR4A register in 8-bit mode
-}
-
-// ISR definitions
-
 void BLDCControl::update_commutation() {
   // BLDC commutation lookup table
-  (*commutation_functions[((direction<<3)|(hall_u<<2)|(hall_v<<1)|(hall_w))])();
+  (*commutation_functions[((direction<<3) | HALL_UVW_IN)])();
 }
 
-void BLDCControl::charge_pump_u() {
-  // U phase charge pump
-  sbi(PORTD, 1);  // INT1 -> PD1
-  cbi(PORTD, 1);
+void BLDCControl::initialize_high_side_switches() {
+  // Configure pins in GPIO peripheral
+  // TODO: Set registers directly
+  pinMode(U_HI, OUTPUT);
+  digitalWrite(U_HI, LOW);
+  pinMode(V_HI, OUTPUT);
+  digitalWrite(V_HI, LOW);
+  pinMode(W_HI, OUTPUT);
+  digitalWrite(W_HI, LOW);
+
+  // Configure pins in PWM peripheral
+  BRIDGE_PWM->PSEL.OUT[U_HI_PWM_CH] = (U_HI << PWM_PSEL_OUT_PIN_Pos) |
+                                      (PWM_PSEL_OUT_CONNECT_Connected << PWM_PSEL_OUT_CONNECT_Pos);
+  BRIDGE_PWM->PSEL.OUT[V_HI_PWM_CH] = (V_HI << PWM_PSEL_OUT_PIN_Pos) |
+                                      (PWM_PSEL_OUT_CONNECT_Connected << PWM_PSEL_OUT_CONNECT_Pos);
+  BRIDGE_PWM->PSEL.OUT[W_HI_PWM_CH] = (W_HI << PWM_PSEL_OUT_PIN_Pos) |
+                                      (PWM_PSEL_OUT_CONNECT_Connected << PWM_PSEL_OUT_CONNECT_Pos);
+
+  // Enable PWMn peripheral
+  BRIDGE_PWM->ENABLE = (PWM_ENABLE_ENABLE_Enabled << PWM_ENABLE_ENABLE_Pos);
+
+  // Configure PWM mode and frequency
+  BRIDGE_PWM->MODE              = (PWM_MODE_UPDOWN_Up << PWM_MODE_UPDOWN_Pos);
+  BRIDGE_PWM->PRESCALER         = (PWM_PRESCALER_PRESCALER_DIV_2 << PWM_PRESCALER_PRESCALER_Pos);
+  BRIDGE_PWM->COUNTERTOP        = (255 << PWM_COUNTERTOP_COUNTERTOP_Pos);
+
+  // Define PWM sequencing
+  BRIDGE_PWM->LOOP              = (PWM_LOOP_CNT_Disabled << PWM_LOOP_CNT_Pos);
+  BRIDGE_PWM->DECODER           = (PWM_DECODER_LOAD_Individual << PWM_DECODER_LOAD_Pos) |
+                                  (PWM_DECODER_MODE_RefreshCount << PWM_DECODER_MODE_Pos);
+  BRIDGE_PWM->SEQ[0].PTR        = ((uint32_t)(pwm_seq) << PWM_SEQ_PTR_PTR_Pos);
+  BRIDGE_PWM->SEQ[0].CNT        = ((sizeof(pwm_seq) / sizeof(uint16_t)) << PWM_SEQ_CNT_CNT_Pos);
+  BRIDGE_PWM->SEQ[0].REFRESH    = 0;
+  BRIDGE_PWM->SEQ[0].ENDDELAY   = 0;
+
+  // Begin PWM sequence
+  BRIDGE_PWM->TASKS_SEQSTART[0] = 1;
 }
 
-void BLDCControl::charge_pump_v() {
-  // V phase charge pump
-  sbi(PORTD, 2); // INT2 -> PD2
-  cbi(PORTD, 2);
+void BLDCControl::initialize_low_side_switches() {
+  // Set up the low-side bridge switches in toggle mode, inital value low
+  NRF_GPIOTE->CONFIG[U_LO_GPIOTE_CH] = GPIOTE_CONFIG_MODE_Task       << GPIOTE_CONFIG_MODE_Pos |
+                                       GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos |
+                                       GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
+                                       U_LO                          << GPIOTE_CONFIG_PSEL_Pos;
+  NRF_GPIOTE->CONFIG[V_LO_GPIOTE_CH] = GPIOTE_CONFIG_MODE_Task       << GPIOTE_CONFIG_MODE_Pos |
+                                       GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos |
+                                       GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
+                                       V_LO                          << GPIOTE_CONFIG_PSEL_Pos;
+  NRF_GPIOTE->CONFIG[W_LO_GPIOTE_CH] = GPIOTE_CONFIG_MODE_Task       << GPIOTE_CONFIG_MODE_Pos |
+                                       GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos |
+                                       GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
+                                       W_LO                          << GPIOTE_CONFIG_PSEL_Pos;
+
+   // Configure PPI to enable/disable low-side switches
+   NRF_PPI->CH[PPI_CH_E].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[U_LO_ENA_EGU_CH];
+   NRF_PPI->CH[PPI_CH_E].TEP = (uint32_t)&NRF_GPIOTE->TASKS_SET[U_LO_GPIOTE_CH];
+   NRF_PPI->FORK[PPI_CH_E].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
+   NRF_PPI->CH[PPI_CH_F].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[UVW_LO_DIS_EGU_CH];
+   NRF_PPI->CH[PPI_CH_F].TEP = (uint32_t)&NRF_GPIOTE->TASKS_CLR[U_LO_GPIOTE_CH];
+   NRF_PPI->FORK[PPI_CH_F].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
+
+   NRF_PPI->CH[PPI_CH_G].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[V_LO_ENA_EGU_CH];
+   NRF_PPI->CH[PPI_CH_G].TEP = (uint32_t)&NRF_GPIOTE->TASKS_SET[V_LO_GPIOTE_CH];
+   NRF_PPI->FORK[PPI_CH_G].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
+   NRF_PPI->CH[PPI_CH_H].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[UVW_LO_DIS_EGU_CH];
+   NRF_PPI->CH[PPI_CH_H].TEP = (uint32_t)&NRF_GPIOTE->TASKS_CLR[V_LO_GPIOTE_CH];
+   NRF_PPI->FORK[PPI_CH_H].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
+
+   NRF_PPI->CH[PPI_CH_I].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[W_LO_ENA_EGU_CH];
+   NRF_PPI->CH[PPI_CH_I].TEP = (uint32_t)&NRF_GPIOTE->TASKS_SET[W_LO_GPIOTE_CH];
+   NRF_PPI->FORK[PPI_CH_I].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
+   NRF_PPI->CH[PPI_CH_J].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[UVW_LO_DIS_EGU_CH];
+   NRF_PPI->CH[PPI_CH_J].TEP = (uint32_t)&NRF_GPIOTE->TASKS_CLR[W_LO_GPIOTE_CH];
+   NRF_PPI->FORK[PPI_CH_J].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
+
+   // Enable the appropriate PPI channels
+   NRF_PPI->CHENSET |= (1 << PPI_CH_E) |
+                       (1 << PPI_CH_F) |
+                       (1 << PPI_CH_G) |
+                       (1 << PPI_CH_H) |
+                       (1 << PPI_CH_I) |
+                       (1 << PPI_CH_J);
 }
 
-void BLDCControl::charge_pump_w() {
-  // W phase charge pump
-  sbi(PORTD, 3);  // INT3 -> PD3
-  cbi(PORTD, 3);
-}
+void BLDCControl::initialize_three_phase_bridge() {
+  /*
+  This function configures the nrf52832 PPI to close the low-side bridge
+  switches once per PWM cycle to ensure the charge pump capacitors are
+  charged.
 
-void BLDCControl::initialize_blank() {
-  // Set up pin A in toggle mode, inital value low
-  NRF_GPIOTE->CONFIG[GPIOTE_CH_A] = GPIOTE_CONFIG_MODE_Task       << GPIOTE_CONFIG_MODE_Pos |
-                                    GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos |
-                                    GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
-                                    PIN_A                         << GPIOTE_CONFIG_PSEL_Pos;
-  NRF_GPIOTE->CONFIG[GPIOTE_CH_B] = GPIOTE_CONFIG_MODE_Task       << GPIOTE_CONFIG_MODE_Pos |
-                                    GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos |
-                                    GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
-                                    PIN_B                         << GPIOTE_CONFIG_PSEL_Pos;
-  NRF_GPIOTE->CONFIG[GPIOTE_CH_C] = GPIOTE_CONFIG_MODE_Task       << GPIOTE_CONFIG_MODE_Pos |
-                                    GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos |
-                                    GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
-                                    PIN_C                         << GPIOTE_CONFIG_PSEL_Pos;
-  // Set up TIMER4
-  NRF_TIMER4->BITMODE                 = TIMER_BITMODE_BITMODE_32Bit << TIMER_BITMODE_BITMODE_Pos;
-  NRF_TIMER4->PRESCALER               = 0;
-  NRF_TIMER4->SHORTS                  = TIMER_SHORTS_COMPARE5_CLEAR_Msk;
-  NRF_TIMER4->MODE                    = TIMER_MODE_MODE_Timer << TIMER_MODE_MODE_Pos;
-  NRF_TIMER4->CC[3]                   = 2;
-  NRF_TIMER4->CC[4]                   = 4;
-  NRF_TIMER4->CC[5]                   = 6;
+  The low side switches are closed in succession. The timing is controlled
+  by TIMERn (see BLDCControlConfig.h). When PWMn (see BLDCControlConfig.h)
+  generates the PWMPERIODEND event, the PPI triggers the START task on
+  TIMERn. The PPI subsequently pulses the low-side switches in order (U, V,
+  W) for two clock cycles each (125 ns). The PPI finally triggers the STOP
+  task on TIMERn. TIMERn is cleared at the end of every sequence.
+  */
 
-  // Have CC[0] in the timer toggle both pin A and pin B (using the FORK feature to control two tasks)
-  NRF_PPI->CH[PPI_CH_A].EEP   = (uint32_t)&NRF_PWM0->EVENTS_PWMPERIODEND;
-  NRF_PPI->CH[PPI_CH_A].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_A];
-  NRF_PPI->FORK[PPI_CH_A].TEP = (uint32_t)&NRF_TIMER4->TASKS_START;
-  NRF_PPI->CH[PPI_CH_B].EEP   = (uint32_t)&NRF_TIMER4->EVENTS_COMPARE[3];
-  NRF_PPI->CH[PPI_CH_B].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_A];
-  NRF_PPI->FORK[PPI_CH_B].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_B];
-  NRF_PPI->CH[PPI_CH_C].EEP   = (uint32_t)&NRF_TIMER4->EVENTS_COMPARE[4];
-  NRF_PPI->CH[PPI_CH_C].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_B];
-  NRF_PPI->FORK[PPI_CH_C].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_C];
-  NRF_PPI->CH[PPI_CH_D].EEP   = (uint32_t)&NRF_TIMER4->EVENTS_COMPARE[5];
-  NRF_PPI->CH[PPI_CH_D].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[GPIOTE_CH_C];
-  NRF_PPI->FORK[PPI_CH_D].TEP = (uint32_t)&NRF_TIMER4->TASKS_STOP;
+  // Initialize switches
+  initialize_high_side_switches();  // Configure high-side switches for PWM
+  initialize_low_side_switches();   // Configure low_side switches for GPIOTE
 
-  // Enable the appropriate PPI channels and timer interrupts
-  NRF_PPI->CHENSET = (1 << PPI_CH_A) | (1 << PPI_CH_B) | (1 << PPI_CH_C) | (1 << PPI_CH_D);
+  // Set up TIMERn
+  BRIDGE_TIMER->BITMODE       = TIMER_BITMODE_BITMODE_32Bit << TIMER_BITMODE_BITMODE_Pos;
+  BRIDGE_TIMER->PRESCALER     = 0;
+  BRIDGE_TIMER->SHORTS        = TIMER_SHORTS_COMPARE5_CLEAR_Msk;
+  BRIDGE_TIMER->MODE          = TIMER_MODE_MODE_Timer << TIMER_MODE_MODE_Pos;
+  BRIDGE_TIMER->CC[3]         = 2;
+  BRIDGE_TIMER->CC[4]         = 4;
+  BRIDGE_TIMER->CC[5]         = 6;
+
+  // Configure PPI to pulse low-side switches sequentially at the start of each PWM period
+  NRF_PPI->CH[PPI_CH_A].EEP   = (uint32_t)&BRIDGE_PWM->EVENTS_PWMPERIODEND;
+  NRF_PPI->CH[PPI_CH_A].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[U_LO_GPIOTE_CH];
+  NRF_PPI->FORK[PPI_CH_A].TEP = (uint32_t)&BRIDGE_TIMER->TASKS_START;
+
+  NRF_PPI->CH[PPI_CH_B].EEP   = (uint32_t)&BRIDGE_TIMER->EVENTS_COMPARE[3];
+  NRF_PPI->CH[PPI_CH_B].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[U_LO_GPIOTE_CH];
+  NRF_PPI->FORK[PPI_CH_B].TEP = (uint32_t)&NRF_GPIOTE->TASKS_OUT[V_LO_GPIOTE_CH];
+
+  NRF_PPI->CH[PPI_CH_C].EEP   = (uint32_t)&BRIDGE_TIMER->EVENTS_COMPARE[4];
+  NRF_PPI->CH[PPI_CH_C].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[V_LO_GPIOTE_CH];
+  NRF_PPI->FORK[PPI_CH_C].TEP = (uint32_t)&NRF_GPIOTE->TASKS_OUT[W_LO_GPIOTE_CH];
+
+  NRF_PPI->CH[PPI_CH_D].EEP   = (uint32_t)&BRIDGE_TIMER->EVENTS_COMPARE[5];
+  NRF_PPI->CH[PPI_CH_D].TEP   = (uint32_t)&NRF_GPIOTE->TASKS_OUT[W_LO_GPIOTE_CH];
+  NRF_PPI->FORK[PPI_CH_D].TEP = (uint32_t)&BRIDGE_TIMER->TASKS_STOP;
+
+  // Enable the appropriate PPI channels
+  NRF_PPI->CHENSET |= (1 << PPI_CH_A) |
+                      (1 << PPI_CH_B) |
+                      (1 << PPI_CH_C) |
+                      (1 << PPI_CH_D);
 }
