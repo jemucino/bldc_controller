@@ -13,8 +13,8 @@
 // Initialize direction and duty cycle
 bool BLDCControl::direction = 0;
 uint8_t BLDCControl::duty_cycle = 0;
-uint16_t BLDCControl::pwm_seq[4] = {0, 0, 0, 0};
-const uint16_t pwm_seq_zero[4] = {0x8000, 0x8000, 0x8000, 0x8000};
+uint16_t BLDCControl::pwm_seq[4] = {0x7FFF, 0x7FFF, 0x7FFF, 0x7FFF};
+const uint16_t pwm_seq_zero[4] = {0x7FFF, 0x7FFF, 0x7FFF, 0x7FFF};
 
 // BLDC commutation functions
 void uv() {
@@ -98,14 +98,14 @@ void  (*commutation_functions[])() = {coast, vw, uv, uw, wu, vu, wv, coast, coas
 
 BLDCControl::BLDCControl() {
   // Set hall sensor pins to inputs with pullups and initialize
-  pinMode(HALL_U, INPUT_PULLUP);
-  pinMode(HALL_V, INPUT_PULLUP);
-  pinMode(HALL_W, INPUT_PULLUP);
+  pinMode(U_HALL, INPUT_PULLUP);
+  pinMode(V_HALL, INPUT_PULLUP);
+  pinMode(W_HALL, INPUT_PULLUP);
 
   // Attach interrupts to hall sensor pins
- attachInterrupt(HALL_U, update_commutation, CHANGE);
- attachInterrupt(HALL_V, update_commutation, CHANGE);
- attachInterrupt(HALL_W, update_commutation, CHANGE);
+ attachInterrupt(U_HALL, update_commutation, CHANGE);
+ attachInterrupt(V_HALL, update_commutation, CHANGE);
+ attachInterrupt(W_HALL, update_commutation, CHANGE);
 }
 
 void BLDCControl::initialize() {
@@ -113,9 +113,9 @@ void BLDCControl::initialize() {
   initialize_three_phase_bridge();
 
   // // Attach interrupts to hall sensor pins
-  // attachInterrupt(HALL_U, update_commutation, CHANGE);
-  // attachInterrupt(HALL_V, update_commutation, CHANGE);
-  // attachInterrupt(HALL_W, update_commutation, CHANGE);
+  // attachInterrupt(U_HALL, update_commutation, CHANGE);
+  // attachInterrupt(V_HALL, update_commutation, CHANGE);
+  // attachInterrupt(W_HALL, update_commutation, CHANGE);
 
   // Initialize hall sensors
   update_commutation();
@@ -132,7 +132,7 @@ void BLDCControl::rate_command(uint duty_cycle_cmd, bool direction_cmd) {
 
 void BLDCControl::update_commutation() {
   // BLDC commutation lookup table
-  (*commutation_functions[((direction<<3) | HALL_UVW_IN)])();
+  (*commutation_functions[((direction<<3) | UVW_HALL_IN)])();
 }
 
 void BLDCControl::initialize_high_side_switches() {

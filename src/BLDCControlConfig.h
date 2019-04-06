@@ -15,10 +15,15 @@
 #define W_HI          15
 #define W_LO          16
 
-#define HALL_U        25
-#define HALL_V        26
-#define HALL_W        27
-#define HALL_UVW_IN   (((NRF_GPIO->IN)&0x0E000000)>>25)
+#define U_HALL        25
+#define V_HALL        26
+#define W_HALL        27
+#define UVW_HALL_IN   ((NRF_GPIO->IN >> U_HALL) & 0b111) // Assumes consecutively numbered pins starting at U_HALL
+// #define UVW_HALL_IN   ( \
+//                         (NRF_GPIO->IN >> U_HALL - 0) & 0b001 | \
+//                         (NRF_GPIO->IN >> V_HALL - 1) & 0b010 | \
+//                         (NRF_GPIO->IN >> W_HALL - 2) & 0b100   \
+//                       ) // Does not assume any particular pin ordering
 
 #define U_I           15
 #define V_I           16
