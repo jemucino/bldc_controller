@@ -189,35 +189,35 @@ void BLDCControl::initialize_low_side_switches() {
                                        GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
                                        W_LO                          << GPIOTE_CONFIG_PSEL_Pos;
 
-   // Configure PPI to enable/disable low-side switches
-   NRF_PPI->CH[PPI_CH_E].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[U_LO_ENA_EGU_CH];
-   NRF_PPI->CH[PPI_CH_E].TEP = (uint32_t)&NRF_GPIOTE->TASKS_SET[U_LO_GPIOTE_CH];
-   NRF_PPI->FORK[PPI_CH_E].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
-   NRF_PPI->CH[PPI_CH_F].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[UVW_LO_DIS_EGU_CH];
-   NRF_PPI->CH[PPI_CH_F].TEP = (uint32_t)&NRF_GPIOTE->TASKS_CLR[U_LO_GPIOTE_CH];
-   NRF_PPI->FORK[PPI_CH_F].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
+  // Configure PPI to enable/disable low-side switches
+  NRF_PPI->CH[PPI_CH_E].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[U_LO_ENA_EGU_CH];
+  NRF_PPI->CH[PPI_CH_E].TEP = (uint32_t)&NRF_GPIOTE->TASKS_SET[U_LO_GPIOTE_CH];
+  NRF_PPI->FORK[PPI_CH_E].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
+  NRF_PPI->CH[PPI_CH_F].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[UVW_LO_DIS_EGU_CH];
+  NRF_PPI->CH[PPI_CH_F].TEP = (uint32_t)&NRF_GPIOTE->TASKS_CLR[U_LO_GPIOTE_CH];
+  NRF_PPI->FORK[PPI_CH_F].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
 
-   NRF_PPI->CH[PPI_CH_G].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[V_LO_ENA_EGU_CH];
-   NRF_PPI->CH[PPI_CH_G].TEP = (uint32_t)&NRF_GPIOTE->TASKS_SET[V_LO_GPIOTE_CH];
-   NRF_PPI->FORK[PPI_CH_G].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
-   NRF_PPI->CH[PPI_CH_H].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[UVW_LO_DIS_EGU_CH];
-   NRF_PPI->CH[PPI_CH_H].TEP = (uint32_t)&NRF_GPIOTE->TASKS_CLR[V_LO_GPIOTE_CH];
-   NRF_PPI->FORK[PPI_CH_H].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
+  NRF_PPI->CH[PPI_CH_G].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[V_LO_ENA_EGU_CH];
+  NRF_PPI->CH[PPI_CH_G].TEP = (uint32_t)&NRF_GPIOTE->TASKS_SET[V_LO_GPIOTE_CH];
+  NRF_PPI->FORK[PPI_CH_G].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
+  NRF_PPI->CH[PPI_CH_H].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[UVW_LO_DIS_EGU_CH];
+  NRF_PPI->CH[PPI_CH_H].TEP = (uint32_t)&NRF_GPIOTE->TASKS_CLR[V_LO_GPIOTE_CH];
+  NRF_PPI->FORK[PPI_CH_H].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
 
-   NRF_PPI->CH[PPI_CH_I].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[W_LO_ENA_EGU_CH];
-   NRF_PPI->CH[PPI_CH_I].TEP = (uint32_t)&NRF_GPIOTE->TASKS_SET[W_LO_GPIOTE_CH];
-   NRF_PPI->FORK[PPI_CH_I].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
-   NRF_PPI->CH[PPI_CH_J].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[UVW_LO_DIS_EGU_CH];
-   NRF_PPI->CH[PPI_CH_J].TEP = (uint32_t)&NRF_GPIOTE->TASKS_CLR[W_LO_GPIOTE_CH];
-   NRF_PPI->FORK[PPI_CH_J].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
+  NRF_PPI->CH[PPI_CH_I].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[W_LO_ENA_EGU_CH];
+  NRF_PPI->CH[PPI_CH_I].TEP = (uint32_t)&NRF_GPIOTE->TASKS_SET[W_LO_GPIOTE_CH];
+  NRF_PPI->FORK[PPI_CH_I].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
+  NRF_PPI->CH[PPI_CH_J].EEP = (uint32_t)&BRIDGE_EGU->EVENTS_TRIGGERED[UVW_LO_DIS_EGU_CH];
+  NRF_PPI->CH[PPI_CH_J].TEP = (uint32_t)&NRF_GPIOTE->TASKS_CLR[W_LO_GPIOTE_CH];
+  NRF_PPI->FORK[PPI_CH_J].TEP = (uint32_t)&BRIDGE_PWM->TASKS_SEQSTART[0];
 
-   // Enable the appropriate PPI channels
-   NRF_PPI->CHENSET |= (1 << PPI_CH_E) |
-                       (1 << PPI_CH_F) |
-                       (1 << PPI_CH_G) |
-                       (1 << PPI_CH_H) |
-                       (1 << PPI_CH_I) |
-                       (1 << PPI_CH_J);
+  // Enable the appropriate PPI channels
+  NRF_PPI->CHENSET |= (1 << PPI_CH_E) |
+                     (1 << PPI_CH_F) |
+                     (1 << PPI_CH_G) |
+                     (1 << PPI_CH_H) |
+                     (1 << PPI_CH_I) |
+                     (1 << PPI_CH_J);
 }
 
 void BLDCControl::initialize_three_phase_bridge() {
@@ -269,4 +269,39 @@ void BLDCControl::initialize_three_phase_bridge() {
                       (1 << PPI_CH_B) |
                       (1 << PPI_CH_C) |
                       (1 << PPI_CH_D);
+}
+
+void BLDCControl::initialize_hall_sensor_inputs() {
+  // // Clean-up?
+  // NVIC_DisableIRQ(GPIOTE_IRQn);
+  // NVIC_ClearPendingIRQ(GPIOTE_IRQn);
+  // NVIC_SetPriority(GPIOTE_IRQn, 3);
+  // NVIC_EnableIRQ(GPIOTE_IRQn);
+
+  // Configure GPIOTE
+  NRF_GPIOTE->CONFIG[U_HALL_GPIOTE_CH] = GPIOTE_CONFIG_MODE_Event      << GPIOTE_CONFIG_MODE_Pos |
+                                         GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos |
+                                         GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
+                                         U_HALL                        << GPIOTE_CONFIG_PSEL_Pos;
+  NRF_GPIOTE->CONFIG[V_HALL_GPIOTE_CH] = GPIOTE_CONFIG_MODE_Event      << GPIOTE_CONFIG_MODE_Pos |
+                                         GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos |
+                                         GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
+                                         V_HALL                        << GPIOTE_CONFIG_PSEL_Pos;
+  NRF_GPIOTE->CONFIG[W_HALL_GPIOTE_CH] = GPIOTE_CONFIG_MODE_Event      << GPIOTE_CONFIG_MODE_Pos |
+                                         GPIOTE_CONFIG_OUTINIT_Low     << GPIOTE_CONFIG_OUTINIT_Pos |
+                                         GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos |
+                                         W_HALL                        << GPIOTE_CONFIG_PSEL_Pos;
+
+  // Enable GPIOT interrupts
+  NRF_GPIOTE->INTENSET = (1 << U_HALL_GPIOTE_CH) |
+                         (1 << V_HALL_GPIOTE_CH) |
+                         (1 << W_HALL_GPIOTE_CH);
+
+  // Configure PPI
+  NRF_PPI->CH[PPI_CH_K].EEP = (uint32_t)&NRF_GPIOTE->EVENTS_IN[U_HALL_GPIOTE_CH];
+  NRF_PPI->CH[PPI_CH_K].TEP =
+  NRF_PPI->CH[PPI_CH_L].EEP = (uint32_t)&NRF_GPIOTE->EVENTS_IN[U_HALL_GPIOTE_CH];
+  NRF_PPI->CH[PPI_CH_L].TEP =
+  NRF_PPI->CH[PPI_CH_M].EEP = (uint32_t)&NRF_GPIOTE->EVENTS_IN[U_HALL_GPIOTE_CH];
+  NRF_PPI->CH[PPI_CH_M].TEP =
 }

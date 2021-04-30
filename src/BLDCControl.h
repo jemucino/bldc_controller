@@ -66,6 +66,7 @@ class BLDCControl {
     static void initialize_high_side_switches();
     static void initialize_low_side_switches();
     static void initialize_three_phase_bridge();
+    static void initialize_hall_sensor_inputs()
 };
 
 #endif
